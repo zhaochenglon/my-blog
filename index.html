@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="个人博客 — 记录思考、技术与生活" />
+  <title>赵成龙 · 个人博客</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="site-header" id="top">
+    <div class="container header-inner">
+      <a href="#top" class="logo" aria-label="返回首页">
+        <span class="logo-mark">M</span>
+        <span class="logo-text">赵成龙</span>
+      </a>
+      <button class="nav-toggle" id="navToggle" aria-label="打开菜单" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <nav class="site-nav" id="siteNav">
+        <a href="#home" class="nav-link active">首页</a>
+        <a href="#posts" class="nav-link">文章</a>
+        <a href="#about" class="nav-link">关于</a>
+        <a href="#contact" class="nav-link">联系</a>
+      </nav>
+      <div class="header-actions">
+        <button class="icon-btn" id="searchBtn" aria-label="搜索文章">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        </button>
+        <button class="icon-btn" id="themeToggle" aria-label="切换主题">
+          <svg class="icon-sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+          <svg class="icon-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="search-overlay" id="searchOverlay" hidden>
+    <div class="search-panel">
+      <input type="search" id="searchInput" placeholder="搜索标题、标签或摘要…" autocomplete="off" />
+      <button class="search-close" id="searchClose" aria-label="关闭搜索">×</button>
+    </div>
+  </div>
+
+  <main>
+    <section class="hero" id="home">
+      <div class="container hero-grid">
+        <div class="hero-content">
+          <p class="hero-greeting">你好，我是</p>
+          <h1 class="hero-title">赵成龙</h1>
+          <p class="hero-desc">
+            全栈开发者 · 业余写作者。在这里记录关于
+            <strong>Web 开发</strong>、<strong>产品设计</strong>与<strong>日常思考</strong>的文字。
+          </p>
+          <div class="hero-actions">
+            <a href="#posts" class="btn btn-primary">阅读文章</a>
+            <a href="#about" class="btn btn-ghost">了解更多</a>
+          </div>
+          <div class="hero-stats">
+            <div><span class="stat-num" data-count="48">0</span><span class="stat-label">篇文章</span></div>
+            <div><span class="stat-num" data-count="12">0</span><span class="stat-label">个系列</span></div>
+            <div><span class="stat-num" data-count="3">0</span><span class="stat-label">年写作</span></div>
+          </div>
+        </div>
+        <div class="hero-visual" aria-hidden="true">
+          <div class="avatar-ring">
+            <div class="avatar">赵</div>
+          </div>
+          <div class="floating-card card-1">CSS Grid 实践</div>
+          <div class="floating-card card-2">TypeScript 笔记</div>
+          <div class="floating-card card-3">晨间写作</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section featured" id="featured">
+      <div class="container">
+        <div class="section-head">
+          <h2>精选推荐</h2>
+          <p>编辑挑选的几篇值得一读的文章</p>
+        </div>
+        <article class="featured-card" id="featuredCard">
+          <div class="featured-meta">
+            <span class="tag">前端</span>
+            <time datetime="2026-05-20">2026年5月20日</time>
+          </div>
+          <h3>用原生 JavaScript 构建可维护的单页应用</h3>
+          <p>不依赖框架也能写出结构清晰、易于扩展的前端项目。本文分享模块划分、路由与状态管理的最小实践。</p>
+          <a href="#" class="read-link" data-post="1">继续阅读 →</a>
+        </article>
+      </div>
+    </section>
+
+    <section class="section posts-section" id="posts">
+      <div class="container posts-layout">
+        <div class="posts-main">
+          <div class="section-head row">
+            <div>
+              <h2>全部文章</h2>
+              <p id="postCount">共 6 篇文章</p>
+            </div>
+            <div class="filter-tabs" role="tablist">
+              <button class="filter-tab active" data-filter="all" role="tab">全部</button>
+              <button class="filter-tab" data-filter="前端" role="tab">前端</button>
+              <button class="filter-tab" data-filter="生活" role="tab">生活</button>
+              <button class="filter-tab" data-filter="随笔" role="tab">随笔</button>
+            </div>
+          </div>
+          <div class="posts-grid" id="postsGrid"></div>
+          <button class="btn btn-ghost load-more" id="loadMore">加载更多</button>
+        </div>
+
+        <aside class="sidebar">
+          <div class="widget profile-widget">
+            <div class="widget-avatar">林</div>
+            <h3>赵成龙</h3>
+            <p>写代码，也写字。相信慢思考与持续输出。</p>
+            <div class="social-links">
+              <a href="#" aria-label="GitHub">GH</a>
+              <a href="#" aria-label="Twitter">X</a>
+              <a href="#" aria-label="RSS">RSS</a>
+            </div>
+          </div>
+          <div class="widget">
+            <h4>热门标签</h4>
+            <div class="tag-cloud" id="tagCloud"></div>
+          </div>
+          <div class="widget">
+            <h4>归档</h4>
+            <ul class="archive-list">
+              <li><a href="#">2026 年 <span>12</span></a></li>
+              <li><a href="#">2025 年 <span>24</span></a></li>
+              <li><a href="#">2024 年 <span>12</span></a></li>
+            </ul>
+          </div>
+          <div class="widget newsletter">
+            <h4>订阅更新</h4>
+            <p>新文章发布时收到邮件通知。</p>
+            <form id="subscribeForm">
+              <input type="email" placeholder="your@email.com" required />
+              <button type="submit" class="btn btn-primary btn-sm">订阅</button>
+            </form>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section about-section" id="about">
+      <div class="container about-grid">
+        <div class="about-text">
+          <h2>关于我</h2>
+          <p>
+            我是一名热爱 Web 技术的前端工程师，日常工作围绕组件化、性能优化与用户体验展开。
+            博客是我整理知识、沉淀想法的地方——希望文字对你也有帮助。
+          </p>
+          <p>
+            业余时间喜欢阅读、徒步和胶片摄影。如果你也对技术或创作感兴趣，欢迎通过下方方式联系我。
+          </p>
+          <ul class="skill-list">
+            <li>HTML / CSS / JavaScript</li>
+            <li>React / Vue</li>
+            <li>Node.js</li>
+            <li>UI / UX 设计基础</li>
+          </ul>
+        </div>
+        <div class="about-timeline">
+          <div class="timeline-item">
+            <span class="year">2026</span>
+            <p>开始系统写作，博客改版为纯静态站点。</p>
+          </div>
+          <div class="timeline-item">
+            <span class="year">2024</span>
+            <p>转向前端工程化，参与多个开源项目。</p>
+          </div>
+          <div class="timeline-item">
+            <span class="year">2022</span>
+            <p>大学毕业，进入互联网行业。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section contact-section" id="contact">
+      <div class="container contact-box">
+        <h2>保持联系</h2>
+        <p>有合作、交流或 simply 想打个招呼？给我留言吧。</p>
+        <form class="contact-form" id="contactForm">
+          <div class="form-row">
+            <label>
+              <span>姓名</span>
+              <input type="text" name="name" required placeholder="你的名字" />
+            </label>
+            <label>
+              <span>邮箱</span>
+              <input type="email" name="email" required placeholder="you@example.com" />
+            </label>
+          </div>
+          <label>
+            <span>留言</span>
+            <textarea name="message" rows="4" required placeholder="想说点什么…"></textarea>
+          </label>
+          <button type="submit" class="btn btn-primary">发送消息</button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p>© <span id="year"></span> 赵成龙 · 墨言博客</p>
+      <p class="footer-note">用原生 HTML + CSS + JS 构建</p>
+    </div>
+  </footer>
+
+  <dialog class="post-modal" id="postModal">
+    <article class="modal-content">
+      <button class="modal-close" id="modalClose" aria-label="关闭">×</button>
+      <header class="modal-header">
+        <div class="modal-meta" id="modalMeta"></div>
+        <h2 id="modalTitle"></h2>
+      </header>
+      <div class="modal-body" id="modalBody"></div>
+    </article>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="js/script.js"></script>
+</body>
+</html>
