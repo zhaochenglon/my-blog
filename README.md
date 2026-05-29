@@ -12,9 +12,11 @@
 20260527demo/
 ├── blog/                      # 静态前端（HTML / CSS / JS）
 │   ├── index.html
+│   ├── admin.html             # 管理后台（留言列表、登录、删除）
 │   ├── css/style.css
 │   └── js/
 │       ├── script.js          # 页面逻辑、联系表单提交
+│       ├── admin.js           # 管理后台逻辑
 │       ├── config.js          # API 地址（生产环境，勿提交敏感信息）
 │       └── config.example.js
 ├── blog-api/                  # ASP.NET Core 8 留言 API
@@ -74,6 +76,7 @@ flowchart TB
 - [x] Nginx 托管前端 + 反向代理 API
 - [x] 公网可通过 IP 访问博客：http://39.108.73.54/
 - [x] 联系表单可提交留言到数据库（需 CORS / `config.js` 配置正确）
+- [x] 管理后台 `admin.html`（账号密码登录、留言列表、删除）
 
 ### 建议后续再做（非必须，但生产推荐）
 
@@ -122,7 +125,9 @@ flowchart TB
 
 ```env
 MYSQL_ROOT_PASSWORD=...    # Docker 内 MySQL root 密码
-ADMIN_API_KEY=...          # 查看留言列表时请求头 X-Admin-Key
+ADMIN_API_KEY=...          # 脚本/curl 调管理接口时用（X-Admin-Key）
+ADMIN_USERNAME=admin       # 管理后台登录账号
+ADMIN_PASSWORD=...         # 管理后台登录密码
 FRONTEND_ORIGIN=http://39.108.73.54   # 必须与浏览器地址栏一致
 ```
 
@@ -241,8 +246,12 @@ copy blog\js\config.example.js blog\js\config.js
 | 方法 | 路径 | 权限 | 说明 |
 |------|------|------|------|
 | POST | `/api/messages` | 公开 | 提交留言 `{ name, email, content }` |
-| GET | `/api/messages` | `X-Admin-Key` | 分页列表 |
-| GET | `/api/messages/{id}` | `X-Admin-Key` | 单条详情 |
+| GET | `/api/messages` | 管理员 Token 或 `X-Admin-Key` | 分页列表 |
+| GET | `/api/messages/{id}` | 管理员 Token 或 `X-Admin-Key` | 单条详情 |
+| DELETE | `/api/messages/{id}` | 管理员 Token 或 `X-Admin-Key` | 删除留言 |
+| POST | `/api/admin/login` | 公开 | 管理员登录，返回 Bearer Token |
+
+管理后台页面：`/admin.html`（不挂在公开导航上）。
 
 ---
 
@@ -260,6 +269,202 @@ copy blog\js\config.example.js blog\js\config.js
 **Q: GitHub Pages 还要吗？**  
 可选。前端可继续放 GitHub Pages，只需把 `config.js` 指向 `http://39.108.73.54` 或未来的 `https://api.域名`，并在 `.env` 里设置对应的 `FRONTEND_ORIGIN`。
 
+**Q: `/admin.html` 打开却是首页？**  
+说明服务器 `/var/www/blog/admin.html` 不存在，Nginx 的 `try_files` 回退到了 `index.html`。执行 `sudo cp -r ~/blog-project/blog/* /var/www/blog/` 后刷新。
+
+**Q: API 返回 502？**  
+通常是 `blog-api` 容器未运行。执行 `sudo docker compose -f docker-compose.prod.yml ps` 和 `logs blog-api` 排查。
+
+**Q: 服务器 `git pull` 冲突？**  
+不要在服务器上长期改 tracked 文件。可先 `git stash` 再 `git pull`，或 `git checkout -- 文件名` 丢弃本地改动。
+
+**Q: 改完代码本地要重建 Docker 吗？**  
+改 **前端**（`blog/`）只需刷新浏览器；改 **API**（`blog-api/`）且 API 跑在 Docker 里时，需 `docker compose up -d --build blog-api`。频繁改 API 可用「只跑 MySQL 容器 + 本机 `dotnet run`」，见 [DOCKER.md](./DOCKER.md)。
+
+---
+
+## 十二、上线部署技术点归纳（初级开发者）
+
+如果你之前只做本机开发，第一次把项目放到云服务器、用 Docker 和 Nginx 让外网能访问，这一节把**涉及到的概念和操作**串起来，方便复习和排查问题。
+
+### 12.1 从「本机能跑」到「外网能访问」差了什么？
+
+| 阶段 | 谁访问 | 你主要做什么 |
+|------|--------|--------------|
+| **本机开发** | 只有你自己 | 写代码；Docker 跑数据库和 API；浏览器打开 `localhost` |
+| **上线部署** | 互联网上任何人 | 买云服务器；装/用 Docker 跑后端；Nginx 托管前端并转发 API；防火墙放行端口 |
+
+可以把它理解成：**开发是在自己房间里调试；上线是把店开到大街上，要有门面（Nginx）、后厨（API）、仓库（MySQL），还要规定哪些门对外开（防火墙）。**
+
+### 12.2 本项目的「两张地图」
+
+**本地开发：**
+
+```
+浏览器 → http://localhost:5500（npx serve / Live Server）
+              ↓ fetch
+         http://localhost:5059（Docker blog-api）
+              ↓
+         Docker blog-mysql :3306
+```
+
+**生产环境（当前）：**
+
+```
+浏览器 → http://39.108.73.54（Nginx :80）
+              ├─ /           → /var/www/blog 静态文件
+              └─ /api/...    → 127.0.0.1:5000（Docker blog-api）
+                                    ↓
+                               Docker blog-mysql（不暴露公网）
+```
+
+### 12.3 Docker：你需要知道什么？
+
+**Docker 解决什么问题？**  
+让 MySQL 和 API 在服务器上以**隔离、可重复**的方式运行，不用在系统里手动装 MySQL、配环境，换一台机器也能用同一份配置跑起来。
+
+| 概念 | 通俗理解 | 在本项目中 |
+|------|----------|------------|
+| **镜像（Image）** | 软件安装包 / 快照 | `mysql:8.0`、构建出的 `blog-api` 镜像 |
+| **容器（Container）** | 镜像运行起来的进程 | `blog-mysql`、`blog-api` |
+| **Dockerfile** | 教 Docker 如何构建 API 镜像 | `blog-api/Dockerfile` |
+| **docker-compose.yml** | 一次启动多个容器的清单 | 本地开发用 `docker-compose.yml` |
+| **docker-compose.prod.yml** | 生产环境清单 | 服务器上用这份；API 只绑 `127.0.0.1:5000` |
+
+**常用命令（服务器上）：**
+
+```bash
+# 构建并后台启动
+sudo docker compose -f docker-compose.prod.yml up -d --build
+
+# 查看状态
+sudo docker compose -f docker-compose.prod.yml ps
+
+# 查看日志（排错必备）
+sudo docker compose -f docker-compose.prod.yml logs -f blog-api
+```
+
+**为什么改完 C# 代码要 `--build`？**  
+生产环境里，代码是**打进镜像**再运行的，不是实时读你磁盘上的源码。改 `blog-api/` 后必须重新构建镜像，容器里才是新代码。  
+改 `blog/` 前端**不需要**重建 API 镜像，只要把文件复制到 `/var/www/blog/`。
+
+**EF Migrations（`blog-api/Migrations/`）是什么？**  
+是数据库**表结构**的版本记录（建表、加列），不是导入业务数据。API 启动时会执行 `Migrate()`，自动把 MySQL 更新到最新结构。
+
+### 12.4 Nginx：你需要知道什么？
+
+**Nginx 在本项目里做两件事：**
+
+1. **静态 Web 服务器**：直接把 `index.html`、`admin.html`、CSS、JS 发给浏览器  
+2. **反向代理**：浏览器访问 `/api/...` 时，Nginx 在服务器内部转发给 `127.0.0.1:5000`，外网看不到 5000 端口
+
+当前生产配置（`/etc/nginx/conf.d/blog.conf`）核心逻辑：
+
+```nginx
+location / {
+    try_files $uri $uri/ /index.html;   # 找静态文件，找不到就回 index.html
+}
+location /api/ {
+  proxy_pass http://127.0.0.1:5000/api/;  # 转给 Docker 里的 API
+}
+```
+
+| 现象 | 常见原因 |
+|------|----------|
+| 页面能开，留言 502 | `blog-api` 容器挂了或 `.env` 缺变量导致启动失败 |
+| `/admin.html` 显示成首页 | 服务器上没有 `admin.html`，被 `try_files` 回退到 `index.html` |
+| 静态资源 404 | 没执行 `cp blog/* /var/www/blog/` |
+
+**反向代理一句话：** 访客只和 Nginx（80 端口）说话，Nginx 再替访客去访问后面的 API。
+
+### 12.5 云服务器与防火墙
+
+阿里云轻量服务器 **防火墙** 控制「公网能访问你哪些端口」：
+
+| 规则 | 作用 | 本项目 |
+|------|------|--------|
+| TCP 80 | HTTP 网站 | 必须开，博客和 API 都靠它 |
+| TCP 443 | HTTPS | 有域名和证书后再用 |
+| TCP 22 | SSH 远程登录 | 运维用；公司网络可能仍封 22，可用 Workbench |
+| ICMP | Ping 测通 | 可选 |
+| **不要开 3306** | MySQL | 数据库只给容器内 API 用，不应对公网 |
+
+**5000 端口不需要在防火墙放行**，因为只监听 `127.0.0.1`（本机），外网通过 Nginx 的 `/api/` 访问。
+
+### 12.6 配置文件各自管什么？
+
+| 文件 | 在哪 | 作用 |
+|------|------|------|
+| `.env` | 服务器 `~/blog-project/` | 数据库密码、管理员账号、CORS 来源等**敏感配置**（不提交 Git） |
+| `blog/js/config.js` | 本机 + 服务器 `/var/www/blog/js/` | 告诉前端 API 地址（`apiBaseUrl`） |
+| `docker-compose.prod.yml` | 仓库 | 定义生产环境跑哪些容器、端口、环境变量名 |
+| `/etc/nginx/conf.d/blog.conf` | 服务器 | 对外网站与反向代理规则 |
+| `deploy/nginx/blog.conf.example` | 仓库 | Nginx 配置模板（双域名方案参考） |
+
+**CORS（跨域）** 是什么？  
+浏览器只允许页面访问「同源」接口。生产环境 API 通过 `.env` 的 `FRONTEND_ORIGIN` 声明允许哪个前端地址调用。  
+当前前后端同域（都是 `http://39.108.73.54`），只要 `config.js` 配对即可。
+
+### 12.7 标准发布流程（GitHub → 服务器）
+
+```bash
+# 1. 本机：开发、测试、推送到 GitHub
+git add . && git commit -m "..." && git push
+
+# 2. 服务器 Workbench 登录后：
+cd ~/blog-project
+git stash          # 若提示本地文件冲突
+git pull
+
+# 3. 重建后端（改了 blog-api 时必做）
+sudo docker compose -f docker-compose.prod.yml up -d --build
+
+# 4. 更新前端静态文件（改了 blog/ 时必做）
+sudo cp /var/www/blog/js/config.js /tmp/config.js.bak 2>/dev/null || true
+sudo cp -r blog/* /var/www/blog/
+sudo cp /tmp/config.js.bak /var/www/blog/js/config.js 2>/dev/null || true
+
+# 5. 确认 Nginx
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+**验证清单：**
+
+- http://39.108.73.54/ 能打开博客  
+- 联系表单能提交（Network 里 `POST /api/messages` 返回 201）  
+- http://39.108.73.54/admin.html 是登录页（不是首页）  
+- `sudo docker compose -f docker-compose.prod.yml ps` 两个容器都是 Up  
+
+### 12.8 开发 vs 部署：什么改动要做什么？
+
+| 你改了什么 | 本机怎么测 | 服务器上要做什么 |
+|------------|------------|------------------|
+| `blog/` 前端 | 刷新浏览器（`npx serve`） | `git pull` + `cp blog/* /var/www/blog/` |
+| `blog-api/` 后端 | `docker compose up -d --build` 或 `dotnet run` | `git pull` + `docker compose ... up -d --build` |
+| `.env` 环境变量 | 改本地 `.env` 后重启 compose | 改服务器 `.env` 后 `--build` 重启 |
+| Nginx 配置 | 不涉及 | 改 `/etc/nginx/conf.d/blog.conf` + `nginx -t` + reload |
+| 数据库表结构 | `dotnet ef migrations add` | `git pull` 后 API 启动时自动 Migrate |
+
+### 12.9 常见 HTTP 状态码（排错用）
+
+| 状态码 | 含义 | 本项目常见原因 |
+|--------|------|--------------|
+| 200 / 201 | 成功 | 正常 |
+| 401 | 未授权 | 管理接口未登录或 Token 过期 |
+| 404 | 找不到 | API 未重建（旧镜像）；或静态文件未部署 |
+| 502 | 网关错误 | Nginx 连不上 `127.0.0.1:5000`，API 容器未运行 |
+| CORS 报错 | 浏览器拦截 | `FRONTEND_ORIGIN` 与浏览器地址不一致 |
+
+### 12.10 推荐学习顺序
+
+1. 先在本地用 `docker compose up` + `npx serve` 跑通前后端  
+2. 理解 Nginx 的「静态文件」和 `/api/` 反代两条路径  
+3. 在服务器上用 Workbench 练熟 `git pull`、重建容器、复制静态文件  
+4. 学会看 `docker compose logs` 和浏览器 F12 Network  
+5. 有余力再学：HTTPS（443）、域名备案、SSH 密钥登录  
+
+更细的步骤见 [DOCKER.md](./DOCKER.md)、[DEPLOY-CLOUD.md](./DEPLOY-CLOUD.md)、[DEPLOY.md](./DEPLOY.md)。
+
 ---
 
 ## 十一、技术栈
@@ -273,4 +478,4 @@ copy blog\js\config.example.js blog\js\config.js
 
 ---
 
-*最后更新：2026-05-29 · 对应线上环境 http://39.108.73.54/*
+*最后更新：2026-05-29 · 含管理后台与上线技术点归纳 · 线上 http://39.108.73.54/*
