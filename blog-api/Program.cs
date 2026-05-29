@@ -1,4 +1,5 @@
 using BlogApi.Data;
+using BlogApi.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -56,6 +57,7 @@ builder.Services.AddCors(options =>
   });
 });
 
+builder.Services.AddSingleton<AdminAuthService>();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>

@@ -31,6 +31,8 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__Default: Server=mysql;Port=3306;Database=blog_db;User=root;Password=${MYSQL_ROOT_PASSWORD};
       Admin__ApiKey: ${ADMIN_API_KEY}
+      Admin__Username: ${ADMIN_USERNAME}
+      Admin__Password: ${ADMIN_PASSWORD}
       Cors__AllowedOrigins__0: ${FRONTEND_ORIGIN}
     depends_on:
       mysql:
