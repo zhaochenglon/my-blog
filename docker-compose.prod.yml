@@ -1,0 +1,40 @@
+# 云服务器生产环境（在项目根目录执行）
+# 用法见 DEPLOY-CLOUD.md
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: blog-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: blog_db
+      TZ: Asia/Shanghai
+    volumes:
+      - blog_mysql_data:/var/lib/mysql
+    # 不映射 3306 到公网，仅容器内网访问
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+      start_period: 25s
+
+  blog-api:
+    build:
+      context: ./blog-api
+      dockerfile: Dockerfile
+    container_name: blog-api
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5000:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Default: Server=mysql;Port=3306;Database=blog_db;User=root;Password=${MYSQL_ROOT_PASSWORD};
+      Admin__ApiKey: ${ADMIN_API_KEY}
+      Cors__AllowedOrigins__0: ${FRONTEND_ORIGIN}
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+volumes:
+  blog_mysql_data:

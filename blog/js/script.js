@@ -331,6 +331,56 @@
     });
   }
 
+  function getApiBaseUrl() {
+    const cfg = window.BLOG_CONFIG;
+    if (!cfg || !cfg.apiBaseUrl) {
+      console.warn("未找到 js/config.js，请复制 config.example.js 为 config.js");
+      return "";
+    }
+    return cfg.apiBaseUrl.replace(/\/$/, "");
+  }
+
+  async function submitContactForm(form) {
+    const baseUrl = getApiBaseUrl();
+    if (!baseUrl) {
+      showToast("未配置 API 地址，请创建 js/config.js");
+      return;
+    }
+
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = "发送中…";
+
+    const payload = {
+      name: form.name.value.trim(),
+      email: form.email.value.trim(),
+      content: form.message.value.trim(),
+    };
+
+    try {
+      const res = await fetch(`${baseUrl}/api/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(errText || `HTTP ${res.status}`);
+      }
+
+      form.reset();
+      showToast("消息已发送，我会尽快回复你。");
+    } catch (err) {
+      console.error("留言提交失败:", err);
+      showToast("发送失败，请稍后再试或检查 API 是否已启动。");
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalText;
+    }
+  }
+
   function initForms() {
     $("#subscribeForm").addEventListener("submit", (e) => {
       e.preventDefault();
@@ -340,8 +390,7 @@
 
     $("#contactForm").addEventListener("submit", (e) => {
       e.preventDefault();
-      e.target.reset();
-      showToast("消息已发送，我会尽快回复你。");
+      submitContactForm(e.target);
     });
   }
 

@@ -1,0 +1,21 @@
+# 前端 API 配置（含本地地址，按需忽略）
+blog/js/config.js
+js/config.js
+
+# .NET
+blog-api/bin/
+blog-api/obj/
+blog-api/.vs/
+*.user
+*.suo
+
+# 环境变量
+.env
+.env.*
+!.env.example
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

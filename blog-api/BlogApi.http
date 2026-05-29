@@ -1,0 +1,16 @@
+@BlogApi_HostAddress = http://localhost:5059
+@AdminKey = dev-admin-key-change-in-production
+
+### 提交留言（公开）
+POST {{BlogApi_HostAddress}}/api/messages
+Content-Type: application/json
+
+{
+  "name": "测试用户",
+  "email": "test@example.com",
+  "content": "这是一条测试留言。"
+}
+
+### 留言列表（需管理密钥）
+GET {{BlogApi_HostAddress}}/api/messages?page=1&pageSize=20
+X-Admin-Key: {{AdminKey}}
