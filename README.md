@@ -32,6 +32,7 @@
 ├── DOCKER.md                  # 本地 Docker 说明
 ├── DEPLOY.md                  # API 部署说明（通用）
 ├── DEPLOY-CLOUD.md            # 云服务器部署概要
+├── TECH.md                    # 架构技术归纳与中级学习路线
 └── README.md                  # 本文档：完整发布流程说明
 ```
 
@@ -234,6 +235,7 @@ copy blog\js\config.example.js blog\js\config.js
 
 | 文档 | 说明 |
 |------|------|
+| [TECH.md](./TECH.md) | 架构技术归纳（Nginx/LB/主从/微服务/MQ/K8s）与中级学习路线 |
 | [DOCKER.md](./DOCKER.md) | 本机 Docker 开发与联调 |
 | [DEPLOY-CLOUD.md](./DEPLOY-CLOUD.md) | 云服务器部署步骤摘要 |
 | [DEPLOY.md](./DEPLOY.md) | API、CORS、安全清单 |
