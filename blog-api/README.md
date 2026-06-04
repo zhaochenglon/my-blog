@@ -17,6 +17,17 @@ dotnet run
 # http://localhost:5059/swagger
 ```
 
+## Redis 缓存（留言列表）
+
+- 仅 **`GET /api/messages`**（管理员列表）走 Redis，TTL 默认 **10 分钟**（`Redis:MessageListCacheMinutes`）。
+- 模式：**Cache-Aside** — 先读缓存，未命中查 MySQL 再写入；`POST` / `DELETE` 后递增版本号使列表缓存失效。
+- 实现：`Services/MessageListCacheService.cs`；Docker 需启动 `redis` 服务（见根目录 `docker-compose.yml`）。
+
+```bash
+# 观察缓存 key（开发）
+docker exec -it blog-redis redis-cli KEYS 'blog:*'
+```
+
 ## 接口
 
 - `POST /api/messages` — 提交留言（公开）

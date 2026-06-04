@@ -58,6 +58,22 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddSingleton<AdminAuthService>();
+
+var redisConnection = builder.Configuration.GetConnectionString("Redis");
+if (!string.IsNullOrWhiteSpace(redisConnection))
+{
+  builder.Services.AddStackExchangeRedisCache(options =>
+  {
+    options.Configuration = redisConnection;
+    options.InstanceName = "blog:";
+  });
+}
+else
+{
+  builder.Services.AddDistributedMemoryCache();
+}
+
+builder.Services.AddSingleton<MessageListCacheService>();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>

@@ -12,6 +12,7 @@ namespace BlogApi.Controllers;
 public class MessagesController(
     AppDbContext db,
     AdminAuthService auth,
+    MessageListCacheService messageCache,
     ILogger<MessagesController> logger) : ControllerBase
 {
   [HttpPost]
@@ -30,6 +31,7 @@ public class MessagesController(
 
     db.Messages.Add(message);
     await db.SaveChangesAsync(cancellationToken);
+    await messageCache.InvalidateAsync(cancellationToken);
 
     logger.LogInformation("New message from {Email}", message.Email);
 
@@ -61,6 +63,10 @@ public class MessagesController(
     page = Math.Max(1, page);
     pageSize = Math.Clamp(pageSize, 1, 100);
 
+    var cached = await messageCache.TryGetAsync(page, pageSize, cancellationToken);
+    if (cached is not null)
+      return Ok(cached);
+
     var query = db.Messages.AsNoTracking();
     var totalCount = await query.CountAsync(cancellationToken);
 
@@ -70,11 +76,14 @@ public class MessagesController(
         .Take(pageSize)
         .ToListAsync(cancellationToken);
 
-    return Ok(new PagedMessageResponse(
+    var response = new PagedMessageResponse(
         items.Select(ToResponse).ToList(),
         totalCount,
         page,
-        pageSize));
+        pageSize);
+
+    await messageCache.SetAsync(page, pageSize, response, cancellationToken);
+    return Ok(response);
   }
 
   [HttpDelete("{id:long}")]
@@ -87,6 +96,7 @@ public class MessagesController(
 
     db.Messages.Remove(message);
     await db.SaveChangesAsync(cancellationToken);
+    await messageCache.InvalidateAsync(cancellationToken);
 
     logger.LogInformation("Deleted message {Id}", id);
     return NoContent();

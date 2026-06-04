@@ -16,6 +16,13 @@ services:
       retries: 15
       start_period: 25s
 
+  redis:
+    image: redis:7-alpine
+    container_name: blog-redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+
   blog-api-1:
     build:
       context: ./blog-api
@@ -26,6 +33,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__Default: Server=mysql;Port=3306;Database=blog_db;User=root;Password=${MYSQL_ROOT_PASSWORD};
+      ConnectionStrings__Redis: redis:6379
       Admin__ApiKey: ${ADMIN_API_KEY}
       Admin__Username: ${ADMIN_USERNAME}
       Admin__Password: ${ADMIN_PASSWORD}
@@ -33,6 +41,8 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+      redis:
+        condition: service_started
 
   blog-api-2:
     build:
@@ -44,6 +54,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__Default: Server=mysql;Port=3306;Database=blog_db;User=root;Password=${MYSQL_ROOT_PASSWORD};
+      ConnectionStrings__Redis: redis:6379
       Admin__ApiKey: ${ADMIN_API_KEY}
       Admin__Username: ${ADMIN_USERNAME}
       Admin__Password: ${ADMIN_PASSWORD}
@@ -51,6 +62,8 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+      redis:
+        condition: service_started
 
 volumes:
   blog_mysql_data:
