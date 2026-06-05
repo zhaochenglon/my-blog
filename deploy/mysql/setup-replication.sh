@@ -10,7 +10,9 @@ set -euo pipefail
 MASTER_CONTAINER="${MASTER_CONTAINER:-blog-mysql-master}"
 SLAVE_CONTAINER="${SLAVE_CONTAINER:-blog-mysql-slave}"
 ROOT_PASSWORD="${MYSQL_ROOT_PASSWORD:?请设置 MYSQL_ROOT_PASSWORD}"
+ROOT_PASSWORD="${ROOT_PASSWORD%"${ROOT_PASSWORD##*[![:space:]]}"}"
 REPL_PASSWORD="${MYSQL_REPLICATION_PASSWORD:-repl_dev_password}"
+REPL_PASSWORD="${REPL_PASSWORD%"${REPL_PASSWORD##*[![:space:]]}"}"
 
 echo "==> 从主库导出 blog_db 到从库..."
 docker exec "${MASTER_CONTAINER}" mysqldump -uroot -p"${ROOT_PASSWORD}" \
