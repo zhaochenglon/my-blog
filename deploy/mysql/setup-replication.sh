@@ -29,6 +29,7 @@ EOSQL
 echo "==> 配置从库复制源并启动..."
 docker exec -i "${SLAVE_CONTAINER}" mysql -uroot -p"${ROOT_PASSWORD}" <<EOSQL
 STOP REPLICA;
+CHANGE REPLICATION FILTER REPLICATE_DO_DB = (blog_db);
 CHANGE REPLICATION SOURCE TO
   SOURCE_HOST='mysql-master',
   SOURCE_USER='repl',
