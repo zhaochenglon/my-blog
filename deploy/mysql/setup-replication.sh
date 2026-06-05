@@ -14,6 +14,15 @@ ROOT_PASSWORD="${ROOT_PASSWORD%"${ROOT_PASSWORD##*[![:space:]]}"}"
 REPL_PASSWORD="${MYSQL_REPLICATION_PASSWORD:-repl_dev_password}"
 REPL_PASSWORD="${REPL_PASSWORD%"${REPL_PASSWORD##*[![:space:]]}"}"
 
+echo "==> 重置从库复制状态与 GTID（支持重复执行，避免 GTID_PURGED 与 GTID_EXECUTED 冲突）..."
+docker exec -i "${SLAVE_CONTAINER}" mysql -uroot -p"${ROOT_PASSWORD}" <<'EOSQL'
+STOP REPLICA;
+RESET REPLICA ALL;
+RESET MASTER;
+SET GLOBAL read_only = OFF;
+SET GLOBAL super_read_only = OFF;
+EOSQL
+
 echo "==> 从主库导出 blog_db 到从库..."
 docker exec "${MASTER_CONTAINER}" mysqldump -uroot -p"${ROOT_PASSWORD}" \
   --single-transaction --set-gtid-purged=ON --databases blog_db \
