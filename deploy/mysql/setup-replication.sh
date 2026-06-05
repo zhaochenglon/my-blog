@@ -20,7 +20,7 @@ docker exec "${MASTER_CONTAINER}" mysqldump -uroot -p"${ROOT_PASSWORD}" \
   | docker exec -i "${SLAVE_CONTAINER}" mysql -uroot -p"${ROOT_PASSWORD}"
 
 echo "==> 配置从库复制源并启动..."
-docker exec "${SLAVE_CONTAINER}" mysql -uroot -p"${ROOT_PASSWORD}" <<EOSQL
+docker exec -i "${SLAVE_CONTAINER}" mysql -uroot -p"${ROOT_PASSWORD}" <<EOSQL
 STOP REPLICA;
 CHANGE REPLICATION SOURCE TO
   SOURCE_HOST='mysql-master',
