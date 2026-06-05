@@ -17,6 +17,12 @@ dotnet run
 # http://localhost:5059/swagger
 ```
 
+## MySQL 主从读写分离（可选）
+
+- **写**：`AppDbContext` → `ConnectionStrings:Default`（主库）
+- **读**：`AppReadDbContext` → `ConnectionStrings:DefaultRead`（从库）；未配置则读主库
+- Docker：`docker-compose.replica.yml` + [DEPLOY-REPLICA.md](../DEPLOY-REPLICA.md)
+
 ## Redis 缓存（留言列表）
 
 - 仅 **`GET /api/messages`**（管理员列表）走 Redis，TTL 默认 **10 分钟**（`Redis:MessageListCacheMinutes`）。

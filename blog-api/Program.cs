@@ -4,12 +4,20 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var connectionString = builder.Configuration.GetConnectionString("Default")
+var masterConnection = builder.Configuration.GetConnectionString("Default")
     ?? throw new InvalidOperationException("Connection string 'Default' is not configured.");
 
+var readConnectionString = builder.Configuration.GetConnectionString("DefaultRead");
+var readConnection = string.IsNullOrWhiteSpace(readConnectionString)
+    ? masterConnection
+    : readConnectionString;
 var serverVersion = ServerVersion.Parse("8.0.36-mysql");
+
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseMySql(connectionString, serverVersion));
+    options.UseMySql(masterConnection, serverVersion));
+
+builder.Services.AddDbContext<AppReadDbContext>(options =>
+    options.UseMySql(readConnection, serverVersion));
 
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
     ?? ["http://localhost:5500", "http://127.0.0.1:5500", "http://localhost:3000"];
@@ -102,6 +110,12 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 var app = builder.Build();
+
+var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
+if (string.Equals(readConnection, masterConnection, StringComparison.OrdinalIgnoreCase))
+  startupLogger.LogInformation("Read DB: using master (DefaultRead not set or same as Default).");
+else
+  startupLogger.LogInformation("Read DB: using replica connection (DefaultRead).");
 
 using (var scope = app.Services.CreateScope())
 {

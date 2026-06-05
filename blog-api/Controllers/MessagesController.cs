@@ -11,6 +11,7 @@ namespace BlogApi.Controllers;
 [Route("api/[controller]")]
 public class MessagesController(
     AppDbContext db,
+    AppReadDbContext readDb,
     AdminAuthService auth,
     MessageListCacheService messageCache,
     ILogger<MessagesController> logger) : ControllerBase
@@ -46,7 +47,7 @@ public class MessagesController(
   {
     if (!auth.IsAuthorized(Request)) return Unauthorized();
 
-    var message = await db.Messages.AsNoTracking()
+    var message = await readDb.Messages.AsNoTracking()
         .FirstOrDefaultAsync(m => m.Id == id, cancellationToken);
 
     return message is null ? NotFound() : ToResponse(message);
@@ -67,7 +68,7 @@ public class MessagesController(
     if (cached is not null)
       return Ok(cached);
 
-    var query = db.Messages.AsNoTracking();
+    var query = readDb.Messages.AsNoTracking();
     var totalCount = await query.CountAsync(cancellationToken);
 
     var items = await query

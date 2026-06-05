@@ -1,0 +1,104 @@
+# MySQL 一主一从 + Redis + 双 API（读写分离）
+# 启动顺序见 DEPLOY-REPLICA.md
+
+services:
+  mysql-master:
+    image: mysql:8.0
+    container_name: blog-mysql-master
+    hostname: mysql-master
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: blog_db
+      MYSQL_REPLICATION_PASSWORD: ${MYSQL_REPLICATION_PASSWORD:-repl_dev_password}
+      TZ: Asia/Shanghai
+    volumes:
+      - blog_mysql_master_data:/var/lib/mysql
+      - ./deploy/mysql/master.cnf:/etc/mysql/conf.d/99-replication.cnf:ro
+      - ./deploy/mysql/init-master:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+
+  mysql-slave:
+    image: mysql:8.0
+    container_name: blog-mysql-slave
+    hostname: mysql-slave
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      TZ: Asia/Shanghai
+    volumes:
+      - blog_mysql_slave_data:/var/lib/mysql
+      - ./deploy/mysql/slave.cnf:/etc/mysql/conf.d/99-replication.cnf:ro
+    depends_on:
+      mysql-master:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+      start_period: 25s
+
+  redis:
+    image: redis:7-alpine
+    container_name: blog-redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+
+  blog-api-1:
+    build:
+      context: ./blog-api
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5001:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Default: Server=mysql-master;Port=3306;Database=blog_db;User=root;Password=${MYSQL_ROOT_PASSWORD};
+      ConnectionStrings__DefaultRead: Server=mysql-slave;Port=3306;Database=blog_db;User=root;Password=${MYSQL_ROOT_PASSWORD};
+      ConnectionStrings__Redis: redis:6379
+      Admin__ApiKey: ${ADMIN_API_KEY}
+      Admin__Username: ${ADMIN_USERNAME}
+      Admin__Password: ${ADMIN_PASSWORD}
+      Cors__AllowedOrigins__0: ${FRONTEND_ORIGIN}
+    depends_on:
+      mysql-master:
+        condition: service_healthy
+      mysql-slave:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  blog-api-2:
+    build:
+      context: ./blog-api
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5002:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Default: Server=mysql-master;Port=3306;Database=blog_db;User=root;Password=${MYSQL_ROOT_PASSWORD};
+      ConnectionStrings__DefaultRead: Server=mysql-slave;Port=3306;Database=blog_db;User=root;Password=${MYSQL_ROOT_PASSWORD};
+      ConnectionStrings__Redis: redis:6379
+      Admin__ApiKey: ${ADMIN_API_KEY}
+      Admin__Username: ${ADMIN_USERNAME}
+      Admin__Password: ${ADMIN_PASSWORD}
+      Cors__AllowedOrigins__0: ${FRONTEND_ORIGIN}
+    depends_on:
+      mysql-master:
+        condition: service_healthy
+      mysql-slave:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+volumes:
+  blog_mysql_master_data:
+  blog_mysql_slave_data:
