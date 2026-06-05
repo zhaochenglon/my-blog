@@ -19,6 +19,13 @@ docker exec "${MASTER_CONTAINER}" mysqldump -uroot -p"${ROOT_PASSWORD}" \
   --single-transaction --set-gtid-purged=ON --databases blog_db \
   | docker exec -i "${SLAVE_CONTAINER}" mysql -uroot -p"${ROOT_PASSWORD}"
 
+echo "==> 确保主库 repl 用户可用于非 SSL 复制（避免 caching_sha2 要求安全连接）..."
+docker exec -i "${MASTER_CONTAINER}" mysql -uroot -p"${ROOT_PASSWORD}" <<EOSQL
+ALTER USER 'repl'@'%' IDENTIFIED WITH mysql_native_password BY '${REPL_PASSWORD}';
+GRANT REPLICATION SLAVE ON *.* TO 'repl'@'%';
+FLUSH PRIVILEGES;
+EOSQL
+
 echo "==> 配置从库复制源并启动..."
 docker exec -i "${SLAVE_CONTAINER}" mysql -uroot -p"${ROOT_PASSWORD}" <<EOSQL
 STOP REPLICA;
