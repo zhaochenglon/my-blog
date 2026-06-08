@@ -117,24 +117,27 @@ if (string.Equals(readConnection, masterConnection, StringComparison.OrdinalIgno
 else
   startupLogger.LogInformation("Read DB: using replica connection (DefaultRead).");
 
-using (var scope = app.Services.CreateScope())
+if (!app.Environment.IsEnvironment("Testing"))
 {
-  var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-  var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-  try
+  using (var scope = app.Services.CreateScope())
   {
-    var pending = db.Database.GetPendingMigrations().ToList();
-    if (pending.Count > 0)
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    try
     {
-      logger.LogInformation("Applying migrations: {Migrations}", string.Join(", ", pending));
+      var pending = db.Database.GetPendingMigrations().ToList();
+      if (pending.Count > 0)
+      {
+        logger.LogInformation("Applying migrations: {Migrations}", string.Join(", ", pending));
+      }
+      db.Database.Migrate();
+      logger.LogInformation("Database migrations applied.");
     }
-    db.Database.Migrate();
-    logger.LogInformation("Database migrations applied.");
-  }
-  catch (Exception ex)
-  {
-    logger.LogError(ex, "Database migration failed.");
-    throw;
+    catch (Exception ex)
+    {
+      logger.LogError(ex, "Database migration failed.");
+      throw;
+    }
   }
 }
 
@@ -154,3 +157,5 @@ if (!app.Environment.IsDevelopment())
 app.MapControllers();
 
 app.Run();
+
+public partial class Program;
