@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-api:
+    name: Build blog-api
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: blog-api
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build -c Release --no-restore
+
+      # 有测试项目后取消注释：
+      # - name: Test
+      #   run: dotnet test -c Release --no-build --verbosity normal
+
+  build-docker:
+    name: Build Docker image
+    runs-on: ubuntu-latest
+    needs: build-api
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./blog-api
+          push: false
+          tags: blog-api:ci
