@@ -78,6 +78,8 @@ jobs:
           script: |
             set -e
             cd "${{ env.DEPLOY_PATH }}"
+            # 先确保 MySQL / Redis 在同 compose 网络中运行，再更新 API（不用 --no-deps，以便 depends_on 等待 mysql healthy）
+            sudo docker compose -f docker-compose.prod.yml up -d mysql redis
             sudo docker compose -f docker-compose.prod.yml pull blog-api-1 blog-api-2
-            sudo docker compose -f docker-compose.prod.yml up -d --no-deps blog-api-1 blog-api-2
-            sudo docker compose -f docker-compose.prod.yml ps blog-api-1 blog-api-2
+            sudo docker compose -f docker-compose.prod.yml up -d blog-api-1 blog-api-2
+            sudo docker compose -f docker-compose.prod.yml ps
