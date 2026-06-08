@@ -14,7 +14,8 @@
 #    SSH_PRIVATE_KEY   部署用私钥（PEM 全文）
 #    DEPLOY_PATH       可选，默认 /home/admin/blog-project
 # 5. 服务器 .env 增加（镜像地址与 ACR 仓库一致）：
-#    BLOG_API_IMAGE=registry.cn-hangzhou.aliyuncs.com/你的命名空间/blog-api:latest
+#    BLOG_API_IMAGE=crpi-xxx.cn-shenzhen.personal.cr.aliyuncs.com/blog-demo/blog-api:latest
+# 6. 生产使用主从库时，CD 部署 docker-compose.replica.yml（勿用 prod.yml 里的单库 mysql）
 
 name: CD
 
@@ -78,8 +79,9 @@ jobs:
           script: |
             set -e
             cd "${{ env.DEPLOY_PATH }}"
-            # 先确保 MySQL / Redis 在同 compose 网络中运行，再更新 API（不用 --no-deps，以便 depends_on 等待 mysql healthy）
-            sudo docker compose -f docker-compose.prod.yml up -d mysql redis
-            sudo docker compose -f docker-compose.prod.yml pull blog-api-1 blog-api-2
-            sudo docker compose -f docker-compose.prod.yml up -d blog-api-1 blog-api-2
-            sudo docker compose -f docker-compose.prod.yml ps
+            COMPOSE_FILE=docker-compose.replica.yml
+            # 主从环境：确保 mysql-master / mysql-slave / redis 在跑，再更新 API
+            sudo docker compose -f "$COMPOSE_FILE" up -d mysql-master mysql-slave redis
+            sudo docker compose -f "$COMPOSE_FILE" pull blog-api-1 blog-api-2
+            sudo docker compose -f "$COMPOSE_FILE" up -d blog-api-1 blog-api-2
+            sudo docker compose -f "$COMPOSE_FILE" ps

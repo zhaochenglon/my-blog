@@ -52,6 +52,7 @@ services:
       - "127.0.0.1:6379:6379"
 
   blog-api-1:
+    image: ${BLOG_API_IMAGE:-blog-api:prod}
     build:
       context: ./blog-api
       dockerfile: Dockerfile
@@ -76,6 +77,7 @@ services:
         condition: service_started
 
   blog-api-2:
+    image: ${BLOG_API_IMAGE:-blog-api:prod}
     build:
       context: ./blog-api
       dockerfile: Dockerfile
