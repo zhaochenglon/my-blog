@@ -16,6 +16,7 @@
 # 5. 服务器 .env 增加（镜像地址与 ACR 仓库一致）：
 #    BLOG_API_IMAGE=crpi-xxx.cn-shenzhen.personal.cr.aliyuncs.com/blog-demo/blog-api:latest
 # 6. 生产使用主从库时，CD 部署 docker-compose.replica.yml（勿用 prod.yml 里的单库 mysql）
+# 7. 服务器 ~/blog-project 需为 git 仓库（私有库需配置 deploy key 或 PAT，供 git pull 使用）
 
 name: CD
 
@@ -79,8 +80,9 @@ jobs:
           script: |
             set -e
             cd "${{ env.DEPLOY_PATH }}"
+            git pull origin main
             COMPOSE_FILE=docker-compose.replica.yml
-            # 主从环境：确保 mysql-master / mysql-slave / redis 在跑，再更新 API
+            # 主从环境：同步 compose 配置后，确保 mysql-master / mysql-slave / redis 在跑，再更新 API
             sudo docker compose -f "$COMPOSE_FILE" up -d mysql-master mysql-slave redis
             sudo docker compose -f "$COMPOSE_FILE" pull blog-api-1 blog-api-2
             sudo docker compose -f "$COMPOSE_FILE" up -d blog-api-1 blog-api-2
