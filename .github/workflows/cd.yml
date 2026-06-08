@@ -1,0 +1,83 @@
+# CD：main 分支 CI 通过后，推送镜像到阿里云 ACR 并 SSH 部署到云服务器
+#
+# 前置条件（一次性配置）：
+# 1. 阿里云 ACR 个人版：创建实例 → 创建命名空间 → 创建仓库 blog-api（建议私有）
+# 2. ACR 访问凭证：控制台「访问凭证」设置固定密码
+# 3. 云服务器：~/blog-project 已有 .env；执行一次 docker login 登录 ACR
+# 4. GitHub Secrets（Settings → Secrets and variables → Actions）：
+#    ACR_REGISTRY      例：registry.cn-hangzhou.aliyuncs.com（与服务器同地域）
+#    ACR_NAMESPACE     例：blog-demo
+#    ACR_USERNAME      阿里云账号或 RAM 用户名
+#    ACR_PASSWORD      ACR 固定密码
+#    SSH_HOST          云服务器公网 IP
+#    SSH_USER          SSH 用户名，例：admin
+#    SSH_PRIVATE_KEY   部署用私钥（PEM 全文）
+#    DEPLOY_PATH       可选，默认 /home/admin/blog-project
+# 5. 服务器 .env 增加（镜像地址与 ACR 仓库一致）：
+#    BLOG_API_IMAGE=registry.cn-hangzhou.aliyuncs.com/你的命名空间/blog-api:latest
+
+name: CD
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  push-and-deploy:
+    name: Push to ACR and deploy
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+
+    env:
+      IMAGE_NAME: blog-api
+      DEPLOY_PATH: ${{ secrets.DEPLOY_PATH || '/home/admin/blog-project' }}
+
+    steps:
+      - name: Checkout (CI 通过的 commit)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Set image tags
+        id: meta
+        run: |
+          REGISTRY="${{ secrets.ACR_REGISTRY }}"
+          NAMESPACE="${{ secrets.ACR_NAMESPACE }}"
+          SHA="${{ github.event.workflow_run.head_sha }}"
+          SHORT_SHA="${SHA:0:7}"
+          IMAGE="${REGISTRY}/${NAMESPACE}/${IMAGE_NAME}"
+          echo "image=${IMAGE}" >> "$GITHUB_OUTPUT"
+          echo "tags=${IMAGE}:latest,${IMAGE}:sha-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+
+      - name: Login to Aliyun ACR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.ACR_REGISTRY }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./blog-api
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+
+      - name: Deploy to server via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script_stop: true
+          script: |
+            set -e
+            cd "${{ env.DEPLOY_PATH }}"
+            sudo docker compose -f docker-compose.prod.yml pull blog-api-1 blog-api-2
+            sudo docker compose -f docker-compose.prod.yml up -d --no-deps blog-api-1 blog-api-2
+            sudo docker compose -f docker-compose.prod.yml ps blog-api-1 blog-api-2
