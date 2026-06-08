@@ -7,10 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="BlogApi.Tests\**" />
-    <Content Remove="BlogApi.Tests\**" />
-    <EmbeddedResource Remove="BlogApi.Tests\**" />
-    <None Remove="BlogApi.Tests\**" />
+    <Compile Remove="BlogApi.Tests/**" />
+    <Content Remove="BlogApi.Tests/**" />
+    <EmbeddedResource Remove="BlogApi.Tests/**" />
+    <None Remove="BlogApi.Tests/**" />
   </ItemGroup>
 
   <ItemGroup>

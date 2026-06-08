@@ -24,7 +24,7 @@ jobs:
           dotnet-version: 8.0.x
 
       - name: Restore
-        run: dotnet restore
+        run: dotnet restore BlogApi.Tests/BlogApi.Tests.csproj
 
       - name: Build
         run: dotnet build BlogApi.Tests/BlogApi.Tests.csproj -c Release --no-restore

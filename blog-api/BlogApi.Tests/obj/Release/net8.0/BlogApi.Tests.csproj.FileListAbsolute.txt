@@ -1,11 +1,4 @@
 D:\Cursor\20260527demo\blog-api\BlogApi.Tests\bin\Release\net8.0\.msCoverageSourceRootsMapping_BlogApi.Tests
-D:\Cursor\20260527demo\blog-api\BlogApi.Tests\obj\Release\net8.0\BlogApi.Tests.csproj.AssemblyReference.cache
-D:\Cursor\20260527demo\blog-api\BlogApi.Tests\obj\Release\net8.0\MvcTestingAppManifest.json
-D:\Cursor\20260527demo\blog-api\BlogApi.Tests\obj\Release\net8.0\BlogApi.Tests.GeneratedMSBuildEditorConfig.editorconfig
-D:\Cursor\20260527demo\blog-api\BlogApi.Tests\obj\Release\net8.0\BlogApi.Tests.AssemblyInfoInputs.cache
-D:\Cursor\20260527demo\blog-api\BlogApi.Tests\obj\Release\net8.0\BlogApi.Tests.AssemblyInfo.cs
-D:\Cursor\20260527demo\blog-api\BlogApi.Tests\obj\Release\net8.0\BlogApi.Tests.csproj.CoreCompileInputs.cache
-D:\Cursor\20260527demo\blog-api\BlogApi.Tests\obj\Release\net8.0\BlogApi.Tests.sourcelink.json
 D:\Cursor\20260527demo\blog-api\BlogApi.Tests\bin\Release\net8.0\testhost.dll
 D:\Cursor\20260527demo\blog-api\BlogApi.Tests\bin\Release\net8.0\BlogApi.deps.json
 D:\Cursor\20260527demo\blog-api\BlogApi.Tests\bin\Release\net8.0\BlogApi.runtimeconfig.json
@@ -440,6 +433,13 @@ D:\Cursor\20260527demo\blog-api\BlogApi.Tests\bin\Release\net8.0\zh-Hant\Microso
 D:\Cursor\20260527demo\blog-api\BlogApi.Tests\bin\Release\net8.0\runtimes\win\lib\net8.0\System.Diagnostics.EventLog.dll
 D:\Cursor\20260527demo\blog-api\BlogApi.Tests\bin\Release\net8.0\BlogApi.dll
 D:\Cursor\20260527demo\blog-api\BlogApi.Tests\bin\Release\net8.0\BlogApi.pdb
+D:\Cursor\20260527demo\blog-api\BlogApi.Tests\obj\Release\net8.0\BlogApi.Tests.csproj.AssemblyReference.cache
+D:\Cursor\20260527demo\blog-api\BlogApi.Tests\obj\Release\net8.0\MvcTestingAppManifest.json
+D:\Cursor\20260527demo\blog-api\BlogApi.Tests\obj\Release\net8.0\BlogApi.Tests.GeneratedMSBuildEditorConfig.editorconfig
+D:\Cursor\20260527demo\blog-api\BlogApi.Tests\obj\Release\net8.0\BlogApi.Tests.AssemblyInfoInputs.cache
+D:\Cursor\20260527demo\blog-api\BlogApi.Tests\obj\Release\net8.0\BlogApi.Tests.AssemblyInfo.cs
+D:\Cursor\20260527demo\blog-api\BlogApi.Tests\obj\Release\net8.0\BlogApi.Tests.csproj.CoreCompileInputs.cache
+D:\Cursor\20260527demo\blog-api\BlogApi.Tests\obj\Release\net8.0\BlogApi.Tests.sourcelink.json
 D:\Cursor\20260527demo\blog-api\BlogApi.Tests\obj\Release\net8.0\BlogApi..8D7EB82E.Up2Date
 D:\Cursor\20260527demo\blog-api\BlogApi.Tests\obj\Release\net8.0\BlogApi.Tests.dll
 D:\Cursor\20260527demo\blog-api\BlogApi.Tests\obj\Release\net8.0\refint\BlogApi.Tests.dll
