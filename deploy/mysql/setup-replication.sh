@@ -14,6 +14,12 @@ ROOT_PASSWORD="${ROOT_PASSWORD%"${ROOT_PASSWORD##*[![:space:]]}"}"
 REPL_PASSWORD="${MYSQL_REPLICATION_PASSWORD:-repl_dev_password}"
 REPL_PASSWORD="${REPL_PASSWORD%"${REPL_PASSWORD##*[![:space:]]}"}"
 
+if [ "${#REPL_PASSWORD}" -gt 32 ]; then
+  echo "ERROR: MYSQL_REPLICATION_PASSWORD 长度 ${#REPL_PASSWORD} 超过 MySQL 复制用户上限 32 字符。"
+  echo "       请改用 ≤32 位的密码（UUID 请去掉连字符，或另设随机串）。"
+  exit 1
+fi
+
 echo "==> 重置从库复制状态与 GTID（支持重复执行，避免 GTID_PURGED 与 GTID_EXECUTED 冲突）..."
 docker exec -i "${SLAVE_CONTAINER}" mysql -uroot -p"${ROOT_PASSWORD}" <<'EOSQL'
 STOP REPLICA;

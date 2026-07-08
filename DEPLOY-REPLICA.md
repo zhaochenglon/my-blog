@@ -91,6 +91,7 @@ sudo docker compose -f docker-compose.prod.yml down
 ```bash
 # .env 中需有 MYSQL_ROOT_PASSWORD、ADMIN_*、FRONTEND_ORIGIN 等
 echo 'MYSQL_REPLICATION_PASSWORD=你的repl密码' >> .env
+# repl 密码须 ≤32 字符（MySQL 限制；勿用带连字符的 UUID，可用 32 位 hex）
 
 sudo docker compose -f docker-compose.replica.yml up -d mysql-master mysql-slave redis
 ```
